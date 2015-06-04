@@ -67,4 +67,4 @@ end
 ds18b20 = nil
 package.loaded["ds18b20"]=nil
 
-tmr.alarm(0, 10000, 1, function() mqtt_do() end) -- convert 10000 to dynamic variable
+tmr.alarm(0, 60000, 1, function() mqtt_do() end)
