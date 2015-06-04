@@ -1,19 +1,20 @@
 ds18b20 = require("ds18b20")
 
-broker = "pihc"     -- IP or hostname of MQTT broker
+broker = "192.168.1.1"     -- IP or hostname of MQTT broker
 mqttport = 1883          -- MQTT port (default 1883)
 userID = ""              -- username for authentication if required
 userPWD  = ""            -- user password if needed for security
-clientID = "ESP8266_test"        -- Device ID
 GPIO2 = 4                -- IO Index of GPIO2 which is connected to an LED
 count = 0                -- Test number of mqtt_do cycles
 mqtt_state = 0           -- State control
 
+clientID = ""
+
 ds18b20.setup(GPIO2)
 addrs=ds18b20.addrs()
-print(table.getn(addrs))
+print("available ds18b20 addresses: "..table.getn(addrs))
 temp=ds18b20.read(addrs[1], ds18b20.F)
-print(temp)
+print("current reading of first address: "..temp)
 
 function ds18b20_scan()
     ds18b20 = require("ds18b20")
@@ -32,6 +33,14 @@ function mqtt_do()
      
      if mqtt_state < 5 then
           mqtt_state = wifi.sta.status() --State: Waiting for wifi
+          print(".")
+          local i = 1
+          local smac = ""
+          for w in string.gmatch(wifi.sta.getmac(), "[^-]+") do
+            if i > 4 then smac = smac..w end
+            i = i + 1
+          end
+          clientID = "ESP"..smac
 
      elseif mqtt_state == 5 then
           m = mqtt.Client(clientID, 120, userID, userPWD)
@@ -47,7 +56,7 @@ function mqtt_do()
           m:publish("/temperature/"..clientID,temp, 0, 0,
           function(conn)
               -- Print confirmation of data published
-              print(" Sent message #"..count.."\nTemp:"..temp.."\npublished!")
+              print("Sent message #"..count.."\nTemp:"..temp.."\npublished!")
               mqtt_state = 20  -- Finished publishing - go back to publish state.
           end)
      else print("Publishing..."..mqtt_state)
