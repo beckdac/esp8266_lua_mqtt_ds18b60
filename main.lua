@@ -44,7 +44,7 @@ function mqtt_do()
      elseif mqtt_state == 20 then
           mqtt_state = 25 -- Publishing...
           temp = ds18b20_scan()
-          m:publish("/temperature/"..clientID,"Temperature: "..temp.." F", 0, 0,
+          m:publish("/temperature/"..clientID,temp, 0, 0,
           function(conn)
               -- Print confirmation of data published
               print(" Sent message #"..count.."\nTemp:"..temp.."\npublished!")
