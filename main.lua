@@ -12,7 +12,7 @@ clientID = ""
 
 ds18b20.setup(GPIO2)
 addrs=ds18b20.addrs()
-print("available ds18b20 addresses: "..table.getn(addrs))
+print("available ds18b20 addresses: "..#addrs)
 temp=ds18b20.read(addrs[1], ds18b20.F)
 print("current reading of first address: "..temp)
 
@@ -20,9 +20,7 @@ function ds18b20_scan()
     ds18b20 = require("ds18b20")
     ds18b20.setup(GPIO2)
     addrs=ds18b20.addrs()
-    print(table.getn(addrs))
     temp=ds18b20.read(addrs[1], ds18b20.F)
-    print(temp)
     ds18b20 = nil
     package.loaded["ds18b20"]=nil
     return temp
