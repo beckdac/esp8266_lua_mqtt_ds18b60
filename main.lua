@@ -1,6 +1,6 @@
 ds18b20 = require("ds18b20")
 
-broker = "192.168.1.1"     -- IP or hostname of MQTT broker
+broker = "mqtt"          -- IP or hostname of MQTT broker
 mqttport = 1883          -- MQTT port (default 1883)
 userID = ""              -- username for authentication if required
 userPWD  = ""            -- user password if needed for security
@@ -42,9 +42,23 @@ function mqtt_do()
 
      elseif mqtt_state == 5 then
           m = mqtt.Client(clientID, 120, userID, userPWD)
+	      m:on("message", 
+		  function(conn, topic, data)
+              print(topic .. ":" )
+              if data ~= nil then
+                  print(data)
+		      end
+			  if topic == "/reset/"..clientID then
+				  node.restart()
+			  end
+          end)
           m:connect( broker , mqttport, 0,
           function(conn)
                print("Connected to MQTT:" .. broker .. ":" .. mqttport .." as " .. clientID )
+			   m:subscribe("/reset/"..clientID,0,
+			   function(conn)
+			       print("reset subscribe success") 
+		   	   end)
                mqtt_state = 20 -- Go to publish state              
           end)
 
@@ -67,4 +81,4 @@ end
 ds18b20 = nil
 package.loaded["ds18b20"]=nil
 
-tmr.alarm(0, 60000, 1, function() mqtt_do() end)
+tmr.alarm(0, 10000, 1, function() mqtt_do() end)
