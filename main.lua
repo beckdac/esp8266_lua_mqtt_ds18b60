@@ -35,30 +35,43 @@ function mqtt_do()
           local i = 1
           local smac = ""
           for w in string.gmatch(wifi.sta.getmac(), "[^-]+") do
-            if i > 4 then smac = smac..w end
-            i = i + 1
+              if i > 4 then smac = smac..w end
+              i = i + 1
           end
           clientID = "ESP"..smac
 
      elseif mqtt_state == 5 then
           m = mqtt.Client(clientID, 120, userID, userPWD)
-	      m:on("message", 
-		  function(conn, topic, data)
+          m:on("message", 
+          function(conn, topic, data)
               print(topic .. ":" )
               if data ~= nil then
                   print(data)
-		      end
-			  if topic == "/reset/"..clientID then
-				  node.restart()
+              end
+			  -- general reset
+			  if topic == "/reset" then
+			      node.restart()
 			  end
+			  -- node specific reset
+              if topic == "/reset/"..clientID then
+                  node.restart()
+              end
           end)
           m:connect( broker , mqttport, 0,
           function(conn)
                print("Connected to MQTT:" .. broker .. ":" .. mqttport .." as " .. clientID )
-			   m:subscribe("/reset/"..clientID,0,
+               m:subscribe("/reset",0,
 			   function(conn)
-			       print("reset subscribe success") 
-		   	   end)
+                   print("general reset subscribe success") 
+                   m:subscribe("/reset/"..clientID,0,
+                   function(conn)
+                       print("node reset subscribe success") 
+					   m:publish("/node", '{ "node": "'..clientID..'", "features": ["reset", "temperature"] }', 0, 0,
+					   function(conn)
+				           print("published clientID and features to /node")
+					   end)
+                   end)
+			   end)
                mqtt_state = 20 -- Go to publish state              
           end)
 
@@ -69,9 +82,10 @@ function mqtt_do()
           function(conn)
               -- Print confirmation of data published
               print("Sent message #"..count.."\nTemp:"..temp.."\npublished!")
-              mqtt_state = 20  -- Finished publishing - go back to publish state.
+              mqtt_state = 25  -- Finished publishing - go back to publish state.
           end)
-     else print("Publishing..."..mqtt_state)
+     else
+          --print("Waiting..."..mqtt_state)
           mqtt_state = mqtt_state - 1  -- takes us gradually back to publish state to retry
      end
 
